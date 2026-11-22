@@ -4,6 +4,10 @@ A small standalone Windows app that reads the World of Warcraft chat window off 
 
 It is **not** an addon and doesn't touch the game: it only takes screenshots of the area you choose, runs OCR on them, and translates the text.
 
+![The translation window during a raid: Spanish raid chat translated to English, with the original text in grey underneath each message](docs/screenshot.png)
+
+*Spanish raid chat translated live during a raid. Player names are blurred.*
+
 > **Built with AI.** This project was written with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant. Claude wrote the code, documentation and build setup; the maintainer directed the work and tested it in live raids. Review it as you would any other code, and please report any problems you find.
 
 ## Features
