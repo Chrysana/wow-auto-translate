@@ -1,0 +1,62 @@
+# WoW Auto Translate
+
+A small standalone Windows app that reads the World of Warcraft chat window off your screen and shows English translations of anything written in another language, live, in a separate always-on-top window.
+
+It is **not** an addon and doesn't touch the game: it only takes screenshots of the area you choose, runs OCR on them, and translates the text.
+
+## Features
+
+- **Drag a box over your chat**: the app watches that area once a second.
+- **Reads every WoW client language**: English, Spanish, Portuguese, German, French, Italian, Russian, Korean, and Chinese (simplified and traditional). Japanese works too.
+- **Translates anything non-English to English**, showing the original text underneath (this can be turned off).
+- **Class-coloured names**: player names are shown in their class colour, as in game.
+- **Handles real chat**: joins wrapped lines, ignores half-visible lines at the edge of the box and brief overlays (tooltips, "Scroll to Bottom"), and never shows the same message twice.
+
+## Install
+
+Requires Windows and [Python 3.11+](https://www.python.org/downloads/).
+
+```
+pip install -r requirements.txt
+```
+
+The OCR models (a few MB each) download automatically the first time you run the app.
+
+## Use
+
+1. Run `run.bat`, or `python wow_translate.py`.
+2. Click **Select area** and drag a box over the WoW chat window. The area is remembered for next time.
+3. Move the translation window somewhere **outside** that box.
+4. Set WoW to **Windowed (Fullscreen)** so the translation window can stay on top.
+
+Right-click the text area for **Debug: show raw OCR**, which shows what the OCR reads and why lines were skipped.
+
+## How it works
+
+1. **Capture**: screenshots the chosen area with [mss](https://github.com/BoboTiG/python-mss).
+2. **OCR**: [RapidOCR](https://github.com/RapidAI/RapidOCR) (PaddleOCR models on ONNX Runtime) finds each line. A multilingual PP-OCRv6 model reads Latin-alphabet languages, Chinese and Japanese. Separate models re-read each line for Russian (Cyrillic) and Korean, and their reading is used when it is mostly in their script. Windows' built-in OCR is the fallback if RapidOCR isn't installed.
+3. **Grouping**: WoW starts each message at the left edge and indents wrapped lines, so lines are joined into messages by indentation.
+4. **Filtering**: a line must read the same on two scans in a row. Chat only grows downward, so only messages below the last one already handled are treated as new.
+5. **Translation**: Google Translate's free web endpoint detects the language and translates. Only WoW's client languages are translated; if detection misfires on slang or a typo, the app retries assuming the language recent chat has been in.
+6. **Colours**: WoW draws text in exact colours, so pixels matching known class or channel colours show where the name is and what class it belongs to.
+
+## Settings
+
+The constants near the top of `wow_translate.py`:
+
+| Setting | Default | What it does |
+|---|---|---|
+| `TARGET_LANG` | `"en"` | Language to translate into |
+| `SCAN_SECONDS` | `1.0` | How often to scan the chat |
+| `MIN_CONFIDENCE` | `0.93` | How confident the OCR must be in a line before it is used |
+| `WOW_LANGS` | WoW client languages | Detected languages that get translated |
+
+## Privacy
+
+Each new non-English chat message is sent to Google Translate. Nothing else leaves your machine.
+
+## License
+
+[GPL-3.0](LICENSE). Uses RapidOCR and PaddleOCR models (Apache-2.0), mss and ONNX Runtime (MIT), and Pillow (MIT-CMU).
+
+World of Warcraft is a trademark of Blizzard Entertainment. This project is not affiliated with or endorsed by Blizzard.
