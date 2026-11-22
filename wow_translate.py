@@ -14,9 +14,11 @@ Right-click the text area for more options.
 import ctypes
 import difflib
 import json
+import os
 import queue
 import re
 import statistics
+import sys
 import threading
 import time
 import tkinter as tk
@@ -35,7 +37,19 @@ try:
 except Exception:
     pass
 
-CONFIG = Path(__file__).with_name("config.json")
+__version__ = "0.9.0"
+
+if getattr(sys, "frozen", False):
+    # Windowed .exe has no console; give libraries that log/print somewhere harmless to write.
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w")
+    # Packaged .exe: the install folder may not be writable, so keep settings in %APPDATA%.
+    CONFIG = Path(os.environ.get("APPDATA", Path.home())) / "WoWAutoTranslate" / "config.json"
+    CONFIG.parent.mkdir(parents=True, exist_ok=True)
+else:
+    CONFIG = Path(__file__).with_name("config.json")
 TARGET_LANG = "en"
 SCAN_SECONDS = 1.0
 MIN_CONFIDENCE = 0.93  # RapidOCR line score; real chat lines ~0.96+, garbage ~0.9 or less
@@ -75,7 +89,7 @@ class RapidEngine:
 
         logging.getLogger("RapidOCR").setLevel(logging.WARNING)
         self.np, self.TextRecInput = np, TextRecInput
-        # Default (v4) detector finds whole lines; the v5 one splits into single words.
+        # Default detector (PP-OCRv6 small) finds whole lines; the v5 mobile one splits words.
         self.det = RapidOCR()
         self.main_rec = RapidOCR(params={
             "Rec.ocr_version": OCRVersion.PPOCRV6, "Rec.lang_type": LangRec.CH,
@@ -523,7 +537,7 @@ class App:
         self.scanner = Scanner(self.q)
         cfg = json.loads(CONFIG.read_text()) if CONFIG.exists() else {}
 
-        root.title("WoW Translate")
+        root.title(f"WoW Auto Translate v{__version__}")
         root.geometry(cfg.get("window", "520x260+40+40"))
         root.attributes("-topmost", True)
         root.attributes("-alpha", 0.88)
@@ -634,7 +648,25 @@ class App:
         self.root.after(100, self.poll)
 
 
+def self_test(image_path: str, out_path: str):
+    """`--self-test chat.png out.txt`: OCR + translate an image without the UI (checks a build)."""
+    engine, q = make_engine(), queue.Queue()
+    scanner = Scanner(q)
+    img = Image.open(image_path).convert("RGB")
+    lines = engine.read(img)
+    report = [f"engine: {engine.name}", *(f"ocr: {l.text}" for l in lines)]
+    for msg in group_messages(lines):
+        scanner.handle(msg)
+    while not q.empty():
+        item = q.get()
+        report.append(f"[{item[5]}] {item[1]} {item[2]}: {item[3]}" if item[0] == "msg" else item[1])
+    Path(out_path).write_text("\n".join(report) + "\n", encoding="utf-8")
+
+
 if __name__ == "__main__":
-    root = tk.Tk()
-    App(root)
-    root.mainloop()
+    if len(sys.argv) == 4 and sys.argv[1] == "--self-test":
+        self_test(sys.argv[2], sys.argv[3])
+    else:
+        root = tk.Tk()
+        App(root)
+        root.mainloop()

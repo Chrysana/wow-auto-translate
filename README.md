@@ -12,24 +12,46 @@ It is **not** an addon and doesn't touch the game: it only takes screenshots of 
 - **Class-coloured names**: player names are shown in their class colour, as in game.
 - **Handles real chat**: joins wrapped lines, ignores half-visible lines at the edge of the box and brief overlays (tooltips, "Scroll to Bottom"), and never shows the same message twice.
 
-## Install
+## Download and run (Windows)
 
-Requires Windows and [Python 3.11+](https://www.python.org/downloads/).
+1. Download `WoWAutoTranslate-v<version>-windows.zip` from the [Releases](https://github.com/Chrysana/wow-auto-translate/releases) page.
+2. Unzip it anywhere.
+3. Double-click `WoWAutoTranslate.exe`.
 
-```
-pip install -r requirements.txt
-```
-
-The OCR models (a few MB each) download automatically the first time you run the app.
+You don't need to install Python, and the OCR models are included. Windows may show a "Windows protected your PC" warning because the app isn't code-signed: click **More info**, then **Run anyway**.
 
 ## Use
 
-1. Run `run.bat`, or `python wow_translate.py`.
+1. Start the app.
 2. Click **Select area** and drag a box over the WoW chat window. The area is remembered for next time.
 3. Move the translation window somewhere **outside** that box.
 4. Set WoW to **Windowed (Fullscreen)** so the translation window can stay on top.
 
 Right-click the text area for **Debug: show raw OCR**, which shows what the OCR reads and why lines were skipped.
+
+## Run from source
+
+Requires Windows and [Python 3.11+](https://www.python.org/downloads/).
+
+```
+pip install -r requirements.txt
+python wow_translate.py
+```
+
+Or double-click `run.bat`. The OCR models (a few MB each) download automatically the first time you run it.
+
+## Build the .exe
+
+Double-click `build.bat`, or run:
+
+```
+pip install -r requirements.txt pyinstaller
+python build.py
+```
+
+This creates `dist/WoWAutoTranslate/WoWAutoTranslate.exe` and a release zip in `dist/`. The zip includes the four OCR models the app uses and every bundled component's license files (in `licenses/`).
+
+To check a build without the UI, run `WoWAutoTranslate.exe --self-test chat.png out.txt`. It reads a chat screenshot, translates it, and writes the results to `out.txt`.
 
 ## How it works
 
@@ -57,6 +79,6 @@ Each new non-English chat message is sent to Google Translate. Nothing else leav
 
 ## License
 
-[GPL-3.0](LICENSE). Uses RapidOCR and PaddleOCR models (Apache-2.0), mss and ONNX Runtime (MIT), and Pillow (MIT-CMU).
+[GPL-3.0](LICENSE). Uses RapidOCR and PaddleOCR models (Apache-2.0), mss and ONNX Runtime (MIT), Pillow (MIT-CMU), and others. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 World of Warcraft is a trademark of Blizzard Entertainment. This project is not affiliated with or endorsed by Blizzard.
